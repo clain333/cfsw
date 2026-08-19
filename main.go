@@ -12,7 +12,6 @@ var DatumDown float64 = 0
 var singChan = make(chan struct{}, 2000)
 var ipChan = make(chan string, 500)
 var ip2Chan = make(chan string, 20)
-var ip3Chan = make(chan string, 20)
 var num = 0
 var uploadIP = 0
 var wg sync.WaitGroup
@@ -37,11 +36,9 @@ func main() {
 		log.Printf("基准为真连接延迟：%dms\t\t下载速度为:%fmb/s\n", DatumReal, DatumDown)
 		break
 	}
-
-	go CheckAgain()
 	wg.Add(1)
+	go CheckAgain()
 	go CheckAgain2()
-	go CheckAgain3()
 	time.Sleep(500 * time.Millisecond)
 	ip, index, err := GetIPsByCIDRs(C.Cidr)
 	go bar(index)
@@ -81,6 +78,7 @@ func main() {
 		}
 	}
 	wg.Wait()
+	time.Sleep(time.Second)
 	fmt.Println()
 	log.Println("结束")
 }
@@ -104,36 +102,9 @@ func checktcp(ip string) {
 func CheckAgain() {
 	var err error
 	for ip := range ipChan {
-
 		err = nil
-		for range 3 {
-			err = RealPing(ip)
-			if err != nil {
-				break
-			}
-		}
-		if err != nil {
-			continue
-		}
 		now := time.Now()
 		err = RealPing(ip)
-		if err != nil {
-			continue
-		}
-		t := time.Since(now).Milliseconds()
-		if t > DatumReal {
-			continue
-		}
-		ip2Chan <- ip
-	}
-
-	close(ip2Chan)
-}
-func CheckAgain2() {
-	for ip := range ip2Chan {
-
-		now := time.Now()
-		err := RealPing(ip)
 		if err != nil {
 			continue
 		}
@@ -149,12 +120,13 @@ func CheckAgain2() {
 		if f1 < DatumDown {
 			continue
 		}
-		ip3Chan <- ip
+		ip2Chan <- ip
 	}
-	close(ip3Chan)
+
+	close(ip2Chan)
 }
-func CheckAgain3() {
-	for ip := range ip3Chan {
+func CheckAgain2() {
+	for ip := range ip2Chan {
 		for {
 			err := uploadIp(ip, "443")
 			if err == nil {
@@ -170,12 +142,11 @@ func bar(index int) {
 	for {
 
 		fmt.Printf(
-			"\r筛选ip\t\t总长度%d\t\t当前%d\t\t完成：%.2f%%\t\t\t真链接延迟剩下%d个\t\t\t测试下载速度剩下%d个\t\t\t成功上传IP:%d个",
+			"\r筛选ip\t\t总长度%d\t\t当前%d\t\t完成：%.2f%%\t\t\t延迟，下载速度测试剩下%d个\t\t\t成功上传IP:%d个",
 			index,
 			num,
 			float64(num)/float64(index)*100,
 			len(ipChan),
-			len(ip2Chan),
 			uploadIP,
 		)
 		time.Sleep(time.Second)
