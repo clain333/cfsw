@@ -1,5 +1,5 @@
-host: "test.cclain.top"
-auth: "e74e54f06ef4402893eae5dd90863043"
+host: ""
+auth: ""
 cidr: "172.64.0.0/13"
 
 
