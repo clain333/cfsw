@@ -65,9 +65,6 @@ export default {
                         type: "json"
                     }) || [];
                     const body =await request.text();
-                    if (!list.includes(body)) {
-                        list.push(body);
-                    }
                     await env.KV.put('ip',JSON.stringify(list))
                     return new Response(list,{
                         status: 200,

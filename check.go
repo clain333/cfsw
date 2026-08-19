@@ -17,14 +17,14 @@ func afterDash(s string) string {
 	}
 	return ""
 }
-func RealPing(addr string) error {
+func RealPing(addr string) (string, error) {
 	conn, err := net.DialTimeout(
 		"tcp",
 		addr+":80",
 		time.Second,
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer conn.Close()
 
@@ -36,16 +36,21 @@ func RealPing(addr string) error {
 		"\r\n"
 
 	if _, err = conn.Write([]byte(req)); err != nil {
-		return err
+		return "", err
 	}
 	resp, err := http.ReadResponse(bufio.NewReader(conn), nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != 200 {
-		return errors.New(resp.Status)
+		return "", errors.New(resp.Status)
 	}
-	return nil
+	h := resp.Header.Get("cf-ray")
+	hs := strings.Split(h, "-")
+	if len(hs) < 2 {
+		return "UN", nil
+	}
+	return hs[1], nil
 }
 
 func SpeedTestDownload(addr string) (float64, error) {
@@ -117,12 +122,11 @@ func SpeedTestDownload(addr string) (float64, error) {
 		return 0, nil
 	}
 
-	// MB/s
 	speed := float64(total) / elapsed / 1024 / 1024 / 8
 
 	return speed, nil
 }
-func uploadIp(ip, port string) error {
+func uploadIp(ip, port, ray, ms, mb string) error {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			ServerName: C.Host,
@@ -133,11 +137,22 @@ func uploadIp(ip, port string) error {
 		Transport: tr,
 		Timeout:   10 * time.Second,
 	}
-	ip = ip + ":" + port
+	b := bytes.NewBufferString(ip)
+	b.WriteString(":")
+	b.WriteString(port)
+	b.WriteString("#")
+	b.WriteString(ray)
+	b.WriteString("--")
+	b.WriteString(ms)
+	b.WriteString("ms")
+	b.WriteString("--")
+	b.WriteString(mb)
+	b.WriteString("mb/s")
+
 	req, err := http.NewRequest(
 		"POST",
 		"https://"+C.Host+":443/ip",
-		bytes.NewBufferString(ip),
+		b,
 	)
 	if err != nil {
 		return err

@@ -3,15 +3,23 @@ package main
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"sync"
 	"time"
 )
+
+type ipdata struct {
+	ip  string
+	ray string
+	ms  int
+	mb  float64
+}
 
 var DatumReal int64 = 0
 var DatumDown float64 = 0
 var singChan = make(chan struct{}, 2000)
 var ipChan = make(chan string, 500)
-var ip2Chan = make(chan string, 20)
+var ip2Chan = make(chan ipdata, 20)
 var num = 0
 var uploadIP = 0
 var wg sync.WaitGroup
@@ -24,7 +32,7 @@ func main() {
 	}
 	for {
 		now := time.Now()
-		err = RealPing(C.Host)
+		_, err = RealPing(C.Host)
 		if err != nil {
 			continue
 		}
@@ -88,7 +96,7 @@ func checktcp(ip string) {
 		<-singChan
 	}()
 	now := time.Now()
-	err := RealPing(ip)
+	_, err := RealPing(ip)
 	if err != nil {
 		return
 	}
@@ -100,11 +108,10 @@ func checktcp(ip string) {
 }
 
 func CheckAgain() {
-	var err error
+
 	for ip := range ipChan {
-		err = nil
 		now := time.Now()
-		err = RealPing(ip)
+		ray, err := RealPing(ip)
 		if err != nil {
 			continue
 		}
@@ -120,7 +127,12 @@ func CheckAgain() {
 		if f1 < DatumDown {
 			continue
 		}
-		ip2Chan <- ip
+		ip2Chan <- ipdata{
+			ip:  ip,
+			ray: ray,
+			ms:  int(t),
+			mb:  f1,
+		}
 	}
 
 	close(ip2Chan)
@@ -128,7 +140,9 @@ func CheckAgain() {
 func CheckAgain2() {
 	for ip := range ip2Chan {
 		for {
-			err := uploadIp(ip, "443")
+			c := strconv.Itoa(ip.ms)
+			d := strconv.FormatFloat(ip.mb, 'f', -1, 64)
+			err := uploadIp(ip.ip, "443", ip.ray, c, d)
 			if err == nil {
 				uploadIP++
 				break
