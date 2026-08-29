@@ -53,9 +53,10 @@ func main() {
 		num++
 		ip.c++
 	}
+
+	time.Sleep(1 * time.Second)
 	close(singChan)
 	close(heapChan)
-	time.Sleep(1 * time.Second)
 	for is := range *h {
 		fmt.Printf("\r当时的ip为%s\t\t完成度:%.2f%%\t\t成功上传了%d个", (*h)[is].IP, float64(is)/float64(C.SpeedNum)*100, uploadIP)
 		CheckAgain((*h)[is].IP)
