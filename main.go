@@ -46,7 +46,7 @@ func main() {
 			ip.d = uint32(i)
 			go check(ip.toString(), h)
 		}
-		fmt.Printf("\r当时的ip为%v\t\t当前堆内最大延迟为%v", ip, (*h)[0].Ms)
+		fmt.Printf("\r当时的ip为%v\t\t当前堆内最大延迟为%v\t\t完成了%.2f%%", ip, (*h)[0].Ms, float64(num)/float64(index)*100)
 		num++
 		ip.c++
 	}
