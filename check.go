@@ -137,7 +137,7 @@ func SpeedTestDownload(addr string) (float64, error) {
 	var total int64
 
 	for {
-		if time.Since(start) >= 8*time.Second {
+		if time.Since(start) >= 5*time.Second {
 			break
 		}
 
