@@ -9,6 +9,7 @@ import (
 )
 
 var singChan = make(chan struct{})
+var heapChan = make(chan Item)
 var uploadIP = 0
 
 func main() {
@@ -18,6 +19,7 @@ func main() {
 		panic(err)
 	}
 	singChan = make(chan struct{}, C.TNum)
+	heapChan = make(chan Item, C.SpeedNum)
 	h := &MaxHeap{}
 	*h = append(*h, &Item{
 		IP: "0.0.0.0",
@@ -26,6 +28,7 @@ func main() {
 	heap.Init(h)
 	ip, index := GetIPsByCIDRs(C.Cidr)
 	num := 0
+	go inChan(h)
 	for {
 		if index == num {
 			break
@@ -44,13 +47,14 @@ func main() {
 		for i := range 256 {
 			singChan <- struct{}{}
 			ip.d = uint32(i)
-			go check(ip.toString(), h)
+			go check(ip.toString())
 		}
-		fmt.Printf("\r当时的ip为%v\t\t当前堆内最大延迟为%v\t\t完成了%.2f%%", ip, (*h)[0].Ms, float64(num)/float64(index)*100)
+		fmt.Printf("\r当时的ip为%v\t\t当前堆内最大延迟为%v\t\t完成了%.2f%%\t\t堆里有%d", ip, (*h)[0].Ms, float64(num)/float64(index)*100, len(*h))
 		num++
 		ip.c++
 	}
 	close(singChan)
+	close(heapChan)
 	time.Sleep(1 * time.Second)
 	for is := range *h {
 		fmt.Printf("\r当时的ip为%s\t\t完成度:%.2f%%\t\t成功上传了%d个", (*h)[is].IP, float64(is)/float64(C.SpeedNum)*100, uploadIP)
@@ -60,7 +64,7 @@ func main() {
 	log.Println("结束")
 }
 
-func check(ip string, h *MaxHeap) {
+func check(ip string) {
 	defer func() {
 		<-singChan
 	}()
@@ -82,14 +86,18 @@ func check(ip string, h *MaxHeap) {
 	if ray != C.Ray {
 		return
 	}
-	if h.Len() < C.SpeedNum {
-		heap.Push(h, &Item{IP: ip, Ms: ti})
-	} else if (*h)[0].Ms > ti {
-		heap.Pop(h)
-		heap.Push(h, &Item{IP: ip, Ms: ti})
+	heapChan <- Item{IP: ip, Ms: ti}
+}
+func inChan(h *MaxHeap) {
+	for i := range heapChan {
+		if h.Len() < C.SpeedNum {
+			heap.Push(h, &i)
+		} else if (*h)[0].Ms > i.Ms {
+			heap.Pop(h)
+			heap.Push(h, &i)
+		}
 	}
 }
-
 func CheckAgain(ip string) {
 	ti := time.Now()
 	ray, err := RealPing(ip)
