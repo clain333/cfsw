@@ -1,10 +1,14 @@
 host: ""
 auth: ""
-cidr: "172.64.229.0/24"
+cidr: "172.64.225.0/20"
 t_num: 100
 speed_num: 10
 speed_limit: 0.5
-ray: "NRT"
+ray:
+  - "NRT"
+  - "SIN"
+  - "ICN"
+  - "TYO"
 
 
 

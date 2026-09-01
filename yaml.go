@@ -9,13 +9,13 @@ import (
 var C Config
 
 type Config struct {
-	Host       string  `yaml:"host"`
-	Auth       string  `yaml:"auth"`
-	Cidr       string  `yaml:"cidr"`
-	Ray        string  `yaml:"ray"`
-	SpeedNum   int     `yaml:"speed_num"`
-	TNum       int     `yaml:"t_num"`
-	SpeedLimit float64 `yaml:"speed_limit"`
+	Host       string   `yaml:"host"`
+	Auth       string   `yaml:"auth"`
+	Cidr       string   `yaml:"cidr"`
+	Ray        []string `yaml:"ray"`
+	SpeedNum   int      `yaml:"speed_num"`
+	TNum       int      `yaml:"t_num"`
+	SpeedLimit float64  `yaml:"speed_limit"`
 }
 
 func LoadYaml(filename string) error {

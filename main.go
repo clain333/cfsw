@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"fmt"
 	"log"
+	"slices"
 	"strconv"
 	"time"
 )
@@ -84,7 +85,7 @@ func check(ip string) {
 	if ti > 1000 {
 		return
 	}
-	if ray != C.Ray {
+	if !slices.Contains(C.Ray, ray) {
 		return
 	}
 	heapChan <- Item{IP: ip, Ms: ti}

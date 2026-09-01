@@ -1,12 +1,14 @@
 # cfsw
 cf优选ip
 
-# work.js
+# _work.js
 变量
 uuid
 ADMIN
 
-绑定KV
+绑定KV空间
+KV
 
-# _worker
-绑定 KV
+# cfsw.js
+绑定KV空间
+KV
